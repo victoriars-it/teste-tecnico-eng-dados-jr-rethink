@@ -8,12 +8,12 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 
-BRONZE_PATH = "data/bronze"
-SILVER_PATH = "data/silver"
+BRONZE_PATH = "delta/bronze"
+SILVER_PATH = "delta/silver"
 
 def read_bronze_table(spark, table_name: str):
     bronze_path = f"{BRONZE_PATH}/{table_name}"
-    return spark.read.parquet(bronze_path)
+    return spark.read.format("delta").load(bronze_path)
 
 def clean_orders(df):
     logging.info("Cleaning orders table")
@@ -71,13 +71,13 @@ def main():
     logging.info("Starting Silver layer processing")
     
     orders_consolidated = create_orders_consolidated(spark)
-    orders_consolidated.write.mode("overwrite").parquet(f"{SILVER_PATH}/orders_consolidated")
+    orders_consolidated.write.format("delta").mode("overwrite").save(f"{SILVER_PATH}/orders_consolidated")
     count_consolidated = orders_consolidated.count()
     logging.info(f"Orders consolidated created - {count_consolidated} records")
     
     payments = read_bronze_table(spark, "payments").drop("ingestion_timestamp")
     payments_summary = create_payments_summary(payments)
-    payments_summary.write.mode("overwrite").parquet(f"{SILVER_PATH}/payments_summary")
+    payments_summary.write.format("delta").mode("overwrite").save(f"{SILVER_PATH}/payments_summary")
     count_payments = payments_summary.count()
     logging.info(f"Payments summary created - {count_payments} records")
     
