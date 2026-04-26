@@ -216,3 +216,12 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Projeto - dados e artefatos gerados
+data/raw/
+delta/
+output/
+*.crc
+spark-warehouse/
+metastore_db/
+derby.log
