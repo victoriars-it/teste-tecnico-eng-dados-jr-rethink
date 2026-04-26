@@ -7,17 +7,17 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 
-SILVER_PATH = "data/silver"
-GOLD_PATH = "data/gold"
-BRONZE_PATH = "data/bronze"
+SILVER_PATH = "delta/silver"
+GOLD_PATH = "delta/gold"
+BRONZE_PATH = "delta/bronze"
 
 def read_silver_table(spark, table_name: str):
     silver_path = f"{SILVER_PATH}/{table_name}"
-    return spark.read.parquet(silver_path)
+    return spark.read.format("delta").load(silver_path)
 
 def read_bronze_table(spark, table_name: str):
     bronze_path = f"{BRONZE_PATH}/{table_name}"
-    return spark.read.parquet(bronze_path)
+    return spark.read.format("delta").load(bronze_path)
 
 def create_customer_summary(spark):
     logging.info("Creating customer summary")
@@ -84,17 +84,17 @@ def main():
     logging.info("Starting Gold layer processing")
     
     customer_summary = create_customer_summary(spark)
-    customer_summary.write.mode("overwrite").parquet(f"{GOLD_PATH}/customer_summary")
+    customer_summary.write.format("delta").mode("overwrite").save(f"{GOLD_PATH}/customer_summary")
     count_customers = customer_summary.count()
     logging.info(f"Customer summary created - {count_customers} records")
     
     product_summary = create_product_summary(spark)
-    product_summary.write.mode("overwrite").parquet(f"{GOLD_PATH}/product_summary")
+    product_summary.write.format("delta").mode("overwrite").save(f"{GOLD_PATH}/product_summary")
     count_products = product_summary.count()
     logging.info(f"Product summary created - {count_products} records")
     
     seller_summary = create_seller_summary(spark)
-    seller_summary.write.mode("overwrite").parquet(f"{GOLD_PATH}/seller_summary")
+    seller_summary.write.format("delta").mode("overwrite").save(f"{GOLD_PATH}/seller_summary")
     count_sellers = seller_summary.count()
     logging.info(f"Seller summary created - {count_sellers} records")
     
