@@ -8,7 +8,7 @@ logging.basicConfig(
 )
 
 RAW_DATA_PATH = "data/raw"
-BRONZE_PATH = "data/bronze"
+BRONZE_PATH = "delta/bronze"
 
 TABLES = {
     "orders": "olist_orders_dataset.csv",
@@ -17,8 +17,7 @@ TABLES = {
     "products": "olist_products_dataset.csv",
     "sellers": "olist_sellers_dataset.csv",
     "payments": "olist_order_payments_dataset.csv",
-    "reviews": "olist_order_reviews_dataset.csv",
-    "product_category_translation": "product_category_name_translation.csv"
+    "reviews": "olist_order_reviews_dataset.csv"
 }
 
 def ingest_csv_to_bronze(spark, table_name: str, csv_filename: str):
@@ -31,7 +30,7 @@ def ingest_csv_to_bronze(spark, table_name: str, csv_filename: str):
     
     df_with_timestamp = df.withColumn("ingestion_timestamp", current_timestamp())
     
-    df_with_timestamp.write.mode("overwrite").parquet(bronze_path)
+    df_with_timestamp.write.format("delta").mode("overwrite").save(bronze_path)
     
     count = df_with_timestamp.count()
     logging.info(f"Completed ingestion: {table_name} - {count} records")
