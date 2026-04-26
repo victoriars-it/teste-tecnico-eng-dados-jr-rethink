@@ -36,7 +36,8 @@ def create_customer_summary(spark):
             spark_sum("revenue").alias("total_revenue"),
             avg("revenue").alias("avg_order_value"),
             avg("review_score").alias("avg_review_score")
-        )
+        ) \
+        .withColumnRenamed("customer_unique_id", "customer_id")
     
     return customer_summary
 
@@ -50,7 +51,7 @@ def create_product_summary(spark):
         .withColumn("revenue", col("price") + col("freight_value")) \
         .groupBy("product_category_name") \
         .agg(
-            spark_sum("order_item_id").alias("total_units_sold"),
+            count("order_item_id").alias("total_units_sold"),
             spark_sum("revenue").alias("total_revenue"),
             countDistinct("order_id").alias("total_orders"),
             avg("freight_value").alias("avg_freight_value")
@@ -84,7 +85,7 @@ def main():
     logging.info("Starting Gold layer processing")
     
     customer_summary = create_customer_summary(spark)
-    customer_summary.write.format("delta").mode("overwrite").save(f"{GOLD_PATH}/customer_summary")
+    customer_summary.write.format("delta").mode("overwrite").option("overwriteSchema", "true").save(f"{GOLD_PATH}/customer_summary")
     count_customers = customer_summary.count()
     logging.info(f"Customer summary created - {count_customers} records")
     
