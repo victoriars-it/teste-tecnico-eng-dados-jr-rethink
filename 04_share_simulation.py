@@ -32,6 +32,8 @@ def export_gold_tables(spark):
 
         part_file = glob.glob(f"{temp_dir}/part-*.csv")[0]
         final_path = f"{OUTPUT_PATH}/{export_name}"
+        if os.path.exists(final_path):
+            os.remove(final_path)
         shutil.move(part_file, final_path)
         shutil.rmtree(temp_dir)
 
