@@ -1,5 +1,7 @@
 import logging
 import os
+import shutil
+import glob
 from pyspark.sql.functions import col, desc
 from utils import get_spark_session
 
@@ -12,9 +14,9 @@ GOLD_PATH = "delta/gold"
 OUTPUT_PATH = "output"
 
 GOLD_TABLES = {
-    "customer_summary": "gold_customer_summary_export",
-    "product_summary": "gold_product_summary_export",
-    "seller_summary": "gold_seller_summary_export"
+    "customer_summary": "gold_customer_summary_export.csv",
+    "product_summary": "gold_product_summary_export.csv",
+    "seller_summary": "gold_seller_summary_export.csv"
 }
 
 
@@ -24,8 +26,16 @@ def export_gold_tables(spark):
     for table_name, export_name in GOLD_TABLES.items():
         logging.info(f"Exporting {table_name}")
         df = spark.read.format("delta").load(f"{GOLD_PATH}/{table_name}")
-        df.coalesce(1).write.mode("overwrite").option("header", True).csv(f"{OUTPUT_PATH}/{export_name}")
-        logging.info(f"Exported {table_name} to {OUTPUT_PATH}/{export_name}")
+
+        temp_dir = f"{OUTPUT_PATH}/_temp_{table_name}"
+        df.coalesce(1).write.mode("overwrite").option("header", True).csv(temp_dir)
+
+        part_file = glob.glob(f"{temp_dir}/part-*.csv")[0]
+        final_path = f"{OUTPUT_PATH}/{export_name}"
+        shutil.move(part_file, final_path)
+        shutil.rmtree(temp_dir)
+
+        logging.info(f"Exported {table_name} to {final_path}")
 
 
 def print_executive_summary(spark):
