@@ -34,7 +34,7 @@ def create_customer_summary(spark):
         .agg(
             countDistinct("order_id").alias("total_orders"),
             spark_sum("revenue").alias("total_revenue"),
-            avg("revenue").alias("avg_order_value"),
+            (spark_sum("revenue") / countDistinct("order_id")).alias("avg_order_value"),
             avg("review_score").alias("avg_review_score")
         ) \
         .withColumnRenamed("customer_unique_id", "customer_id")
